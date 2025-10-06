@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Management</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>User Management (Admin)</h1>
+        <a href="/">Back to Admin Dashboard</a>
+        <hr>
+
+        <h2>Add New User</h2>
+        <form action="/users/add" method="post">
+            <label for="fullName">Full Name:</label>
+            <input name="fullName" type="text" placeholder="Full Name (e.g., Jane Doe)" required>
+            
+            <label for="username">Username:</label>
+            <input name="username" placeholder="Username (e.g., JaneDoe)" required>
+            
+            <label for="password">Password:</label>
+            <input name="password" type="password" placeholder="Password" required>
+            
+            <label for="role">Role:</label>
+            <select name="role" required>
+                <option value="" disabled selected>Select Role</option>
+                <option value="LoanOfficer">Loan Officer</option>
+                <option value="Borrower">Borrower</option>
+            </select>
+            <button type="submit">Add User</button>
+        </form>
+
+        <h2 style="margin-top: 3rem;">Existing Users</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.username %></td>
+                        <td><%= user.fullName %></td>
+                        <td><%= user.role %></td>
+                        <td><%= user._id %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

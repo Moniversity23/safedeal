@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Loans</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Manage Loans (Admin)</h1>
+        <a href="/">Back to Dashboard</a>
+        <hr>
+
+        <h2>Add New Loan</h2>
+        <form action="/loans/add" method="post">
+            
+            <label for="borrowerId">Select Borrower:</label>
+            <select name="borrowerId" required>
+                <option value="" disabled selected>-- Select Borrower --</option>
+                <% borrowers.forEach(user => { %>
+                    <option value="<%= user._id %>"><%= user.username %> (ID: <%= user._id %>)</option>
+                <% }); %>
+            </select>
+            
+            <label for="officerId">Assign Loan Officer:</label>
+            <select name="officerId" required>
+                <option value="" disabled selected>-- Select Officer --</option>
+                <% loanOfficers.forEach(user => { %>
+                    <option value="<%= user._id %>"><%= user.username %></option>
+                <% }); %>
+            </select>
+
+            <label for="date">Disbursement Date:</label>
+            <input name="date" type="date" required>
+            
+            <label for="principal">Principal Amount:</label>
+            <select name="principal" required>
+                <option value="25000">25,000</option>
+                <option value="50000">50,000</option>
+                <option value="100000">100,000</option>
+                <option value="150000">150,000</option>
+            </select>
+            <button type="submit">Add Loan</button>
+        </form>
+
+        <h2 style="margin-top: 3rem;">Active Loans</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Borrower</th>
+                    <th>Officer</th>
+                    <th>Principal</th>
+                    <th>Date</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% loans.forEach(loan => { %>
+                    <tr>
+                        <td><%= loan.borrower %></td>
+                        <td><%= loan.officer %></td>
+                        <td><%= loan.principal.toFixed(2) %></td>
+                        <td><%= loan.disbursementDate.toLocaleDateString() %></td>
+                        <td><a href="/loan-details/<%= loan._id %>">View Details</a></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

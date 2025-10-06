@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bi-Weekly Summary</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Flexible Bi-Weekly Summary - <%= user.username %> (<%= user.role %>)</h1>
+        <a href="/logout">Logout</a> | <a href="/">Back to Dashboard</a>
+        <hr>
+
+        <h2>Generate Custom Period</h2>
+        <form method="get" action="/biweekly-flexible">
+            <input type="date" name="startDate" required> to <input type="date" name="endDate" required>
+            <button type="submit">Generate Summary</button>
+        </form>
+        <p><small>Or view default last periods below.</small></p>
+        <hr>
+
+        <% if (periods.length === 0) { %>
+            <p class="message">No active loans found to generate a bi-weekly summary.</p>
+        <% } else { %>
+            <div class="summary-grid">
+                <% periods.forEach(period => { %>
+                    <div class="period-card">
+                        <h3>Period: <%= period.start %> to <%= period.end %></h3>
+                        <p><strong>Expected:</strong> ₦<%= period.expected.toLocaleString() %></p>
+                        <p><strong>Collected:</strong> ₦<%= period.collected.toLocaleString() %></p>
+                        <p><strong>Total Interest:</strong> ₦<%= period.totalInterest.toLocaleString() %></p>
+                        <h4>Officer Shares:</h4>
+                        <ul>
+                            <% Object.keys(period.officerShares).forEach(officer => { %>
+                                <li><%= officer %>: ₦<%= Math.ceil(period.officerShares[officer]).toLocaleString() %></li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

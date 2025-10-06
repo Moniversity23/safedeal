@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Borrower Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+</head>
+<body>
+    <h1>Hi, <%= user.fullName %>!</h1>
+    <% if (loan) { %>
+        <div class="summary">
+            <div class="card">
+                <h2>Loan Amount: ₦<%= loan.principal %></h2>
+            </div>
+            <div class="card">
+                <h2>Repayable : ₦<%= totalRepay %></h2>
+            </div>
+            <div class="card">
+                <h2>Balance: ₦<%= remainingBalance %></h2>
+            </div>
+        </div>
+        
+        <h3>40-Day Payment Calendar</h3>
+        <p>Green indicates PAID, Red indicates SKIPPED/UNPAID (Due in Past), Gray is Pending (Due in Future).</p>
+        
+        <table class="calendar">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% 
+                // Map slots for quick lookup
+                var slotsByDate = {};
+                paymentCalendar.forEach(function(slot) { 
+                    slotsByDate[slot.dueDate] = slot; 
+                });
+                
+                // Column config: index 0=Mon (moment.day=1), 1=Tue(2), ..., 5=Sat(6), 6=Sun(0)
+                var columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                var dayNums = [1, 2, 3, 4, 5, 6, 0]; // moment.day() values for columns
+                
+                // Start from calendar Monday
+                var calendarStart = moment(calendarStart);
+                
+                for (var week = 1; week <= 6; week++) { // 6 weeks to cover 40+ days
+                    var weekStartOffset = (week - 1) * 7;
+                %>
+                    <tr>
+                        <td>Week <%= week %></td>
+                        <% for (var col = 0; col < 7; col++) { // 7 columns
+                            // Absolute cell date: calendarStart + week offset + col days
+                            var cellOffset = weekStartOffset + col;
+                            var cellDate = calendarStart.clone().add(cellOffset, 'days');
+                            var cellDateStr = cellDate.format('YYYY-MM-DD');
+                            
+                            // Check if this cell is within 40-day span and matches a due date
+                            var isInSpan = cellDateStr >= firstDue && cellDateStr <= lastDue;
+                            var slot = (isInSpan && slotsByDate[cellDateStr]) ? slotsByDate[cellDateStr] : null;
+                        %>
+                            <% if (slot) { %>
+                                <td class="<%= slot.color %>">
+                                    <div class="date"><%= cellDate.format('MM-DD') %></div>
+                                    <div class="status"><%= slot.status %></div>
+                                    <div class="amount">₦<%= slot.expected %></div>
+                                </td>
+                            <% } else { %>
+                                <td class="empty"></td>
+                            <% } %>
+                        <% } %>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+        
+        <p><strong>Progress:</strong> <%= progress %> | <strong>Daily Payment:</strong> ₦<%= dailyPayment %></p>
+    <% } else { %>
+        <p>No active loan found.</p>
+    <% } %>
+    <a href="/logout">Logout</a>
+</body>
+</html>

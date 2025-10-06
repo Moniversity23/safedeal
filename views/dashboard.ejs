@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard: Welcome, <%= user.username %> (<%= user.role %>)</h1>
+        <a href="/logout">Logout</a>
+        <hr>
+
+        <h2>Financial Summary</h2>
+        <!-- In summary section -->
+        <div class="card expected">Expected Today: ₦<%= expectedToday %></div>
+        <div class="card collected">Collected Today: ₦<%= collectedToday %></div>
+        <!-- Existing cards for activeLoans, PAR, totalDisbursed -->
+        <div class="card expected">Total Disbursed: ₦<%= totalDisbursed.toFixed(2) %></div>
+        <div class="card collected">Accumulated Total Collected:₦<%= accumulatedTotalCollected.toLocaleString() %></div>
+        
+        <h2 style="margin-top: 2rem;">Admin Tools</h2>
+        <nav>
+            <a href="/users/manage">Manage Users (Officers/Borrowers)</a> |
+            <a href="/loans">Manage Loans (Create)</a> |
+            <a href="/daily/<%= today %>">View Today's Payments</a> |
+            <a href="/customers">Customer List & Balances</a> |
+            <a href="/biweekly-flexible">Flexible Bi-Weekly Summary</a>
+        </nav>
+    </div>
+</body>
+</html>

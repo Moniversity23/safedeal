@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily View: <%= date %></title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Daily Payments Log</h1>
+        <a href="<%= userRole === 'Admin' ? '/' : '/officer-dashboard' %>">Back to Dashboard</a>
+        <hr>
+        
+        <!-- Date Navigation Controls -->
+        <div class="date-navigation">
+            <a href="/daily/<%= moment(date).subtract(1, 'days').format('YYYY-MM-DD') %>" class="nav-button">← Previous Day</a>
+            <span class="current-date"><%= moment(date).format('dddd, MMMM Do, YYYY') %></span>
+            <a href="/daily/<%= moment(date).add(1, 'days').format('YYYY-MM-DD') %>" class="nav-button">Next Day →</a>
+        </div>
+        
+        <p>Total Expected for DUE DATE (<%= date %>): **<%= totalExpected.toFixed(0) %>**</p>
+        <p>Total Collected for DUE DATE (<%= date %>): **<%= totalCollected.toFixed(0) %>**</p>
+
+        <% if (userRole === 'Admin' || userRole === 'LoanOfficer') { %>
+            <p style="color: green; font-weight: bold;">You are a <%= userRole %> and can update payments for any date below.</p>
+        <% } %>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Borrower</th>
+                    <th>Officer</th>
+                    <th>Expected</th>
+                    <th>Status</th>
+                    <th>Action (Collection Date: <%= moment().format('YYYY-MM-DD') %>)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% dailyData.forEach(item => { %>
+                    <% const isPaid = item.payment.paid > 0; %>
+                    <% const statusClass = isPaid ? 'status-paid' : 'status-default'; %>
+                    
+                    <tr>
+                        <td><%= item.loan.borrower %></td>
+                        <td><%= item.loan.officer %></td>
+                        <td><%= item.payment.expected.toFixed(0) %></td>
+                        
+                        <td class="<%= statusClass %>">
+                            <%= isPaid ? 'PAID' : (moment().isAfter(item.payment.date, 'day') ? 'SKIPPED' : 'PENDING') %>
+                        </td>
+
+                        <td>
+                            <% if (userRole === 'Admin' || userRole === 'LoanOfficer') { %>
+                                <% if (!isPaid) { %>
+                                    <!-- MARK PAID BUTTON (FULL AMOUNT) -->
+                                    <form action="/daily/mark-paid" method="post" style="display: inline-block;">
+                                        <input type="hidden" name="paymentId" value="<%= item.payment._id %>">
+                                        <input type="hidden" name="date" value="<%= date %>">
+                                        <input type="hidden" name="expectedAmount" value="<%= item.payment.expected %>">
+                                        <button type="submit" style="background-color: #2ecc71;">Mark Paid</button>
+                                    </form>
+                                <% } else { %>
+                                    <!-- ONLY ADMIN CAN RESET PAYMENT -->
+                                    <% if (userRole === 'Admin') { %>
+                                        <form action="/daily/mark-unpaid" method="post" style="display: inline-block;">
+                                            <input type="hidden" name="paymentId" value="<%= item.payment._id %>">
+                                            <input type="hidden" name="date" value="<%= date %>">
+                                            <button type="submit" style="background-color: #e74c3c;">Reset/Unpaid</button>
+                                        </form>
+                                    <% } else { %>
+                                        <span class="status-paid">✅ Paid on <%= moment(item.payment.timestamp).format('MMM Do') %></span>
+                                    <% } %>
+                                <% } %>
+                            <% } else { %>
+                                <span>No Action</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
