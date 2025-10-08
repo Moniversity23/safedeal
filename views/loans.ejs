@@ -48,6 +48,9 @@
                 <tr>
                     <th>Borrower</th>
                     <th>Officer</th>
+                    <th>Bank</th>
+                    <th>Account Name</th>
+                    <th>Account Number</th>
                     <th>Principal</th>
                     <th>Date</th>
                     <th>Details</th>
@@ -58,6 +61,9 @@
                     <tr>
                         <td><%= loan.borrower %></td>
                         <td><%= loan.officer %></td>
+                        <td><%= loan.loanOfficerId.bankName || 'N/A' %></td>
+                        <td><%= loan.loanOfficerId.accountName || 'N/A' %></td>
+                        <td><%= loan.loanOfficerId.accountNumber || 'N/A' %></td>
                         <td><%= loan.principal.toFixed(2) %></td>
                         <td><%= loan.disbursementDate.toLocaleDateString() %></td>
                         <td><a href="/loan-details/<%= loan._id %>">View Details</a></td>

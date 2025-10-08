@@ -1,84 +1,159 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Borrower Dashboard</title>
+    <title>Borrower Dashboard - SAFEDEAL CONTRIBUTION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 </head>
 <body>
-    <h1>Hi, <%= user.fullName %>!</h1>
-    <% if (loan) { %>
-        <div class="summary">
-            <div class="card">
-                <h2>Loan Amount: ₦<%= loan.principal %></h2>
-            </div>
-            <div class="card">
-                <h2>Repayable : ₦<%= totalRepay %></h2>
-            </div>
-            <div class="card">
-                <h2>Balance: ₦<%= remainingBalance %></h2>
-            </div>
+    <header class="header">
+        <div class="header-content">
+            
+            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+            <nav class="header-nav">
+                <a href="/borrower-dashboard" class="nav-link">Dashboard</a>
+                <span class="logout-wrapper">
+                    <a href="/logout" class="logout-btn">🔒 Logout</a>
+                </span>
+            </nav>
+        </div>
+    </header>
+    <div id="loading" class="loading-spinner" style="display:none;"></div>
+    
+    <main class="container">
+        <div class="page-header">
+            <h3>Hi, <%= user.fullName %>!</h3>
         </div>
         
-        <h3>40-Day Payment Calendar</h3>
-        <p>Green indicates PAID, Red indicates SKIPPED/UNPAID (Due in Past), Gray is Pending (Due in Future).</p>
-        
-        <table class="calendar">
-            <thead>
-                <tr>
-                    <th>Week</th>
-                    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% 
-                // Map slots for quick lookup
-                var slotsByDate = {};
-                paymentCalendar.forEach(function(slot) { 
-                    slotsByDate[slot.dueDate] = slot; 
-                });
-                
-                // Column config: index 0=Mon (moment.day=1), 1=Tue(2), ..., 5=Sat(6), 6=Sun(0)
-                var columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                var dayNums = [1, 2, 3, 4, 5, 6, 0]; // moment.day() values for columns
-                
-                // Start from calendar Monday
-                var calendarStart = moment(calendarStart);
-                
-                for (var week = 1; week <= 6; week++) { // 6 weeks to cover 40+ days
-                    var weekStartOffset = (week - 1) * 7;
-                %>
-                    <tr>
-                        <td>Week <%= week %></td>
-                        <% for (var col = 0; col < 7; col++) { // 7 columns
-                            // Absolute cell date: calendarStart + week offset + col days
-                            var cellOffset = weekStartOffset + col;
-                            var cellDate = calendarStart.clone().add(cellOffset, 'days');
-                            var cellDateStr = cellDate.format('YYYY-MM-DD');
-                            
-                            // Check if this cell is within 40-day span and matches a due date
-                            var isInSpan = cellDateStr >= firstDue && cellDateStr <= lastDue;
-                            var slot = (isInSpan && slotsByDate[cellDateStr]) ? slotsByDate[cellDateStr] : null;
-                        %>
-                            <% if (slot) { %>
-                                <td class="<%= slot.color %>">
-                                    <div class="date"><%= cellDate.format('MM-DD') %></div>
-                                    <div class="status"><%= slot.status %></div>
-                                    <div class="amount">₦<%= slot.expected %></div>
-                                </td>
-                            <% } else { %>
-                                <td class="empty"></td>
-                            <% } %>
-                        <% } %>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-        
-        <p><strong>Progress:</strong> <%= progress %> | <strong>Daily Payment:</strong> ₦<%= dailyPayment %></p>
-    <% } else { %>
-        <p>No active loan found.</p>
-    <% } %>
-    <a href="/logout">Logout</a>
+        <% if (loans && loans.length > 0) { %>
+            <% loans.forEach((loanData, index) => { %>
+                <section class="loan-section">
+                    <h4 class="loan-title">Loan <%= index + 1 %> Overview</h4>
+                    
+                    <div class="summary">
+                        <div class="card loan-card kpi expected-kpi">
+                            <h2>Loan Amount: ₦<%= loanData.loan.principal.toLocaleString() %></h2>
+                        </div>
+                        <div class="card repay-card total-expected">
+                            <h2>Repayable: ₦<%= loanData.totalRepay.toLocaleString() %></h2>
+                        </div>
+                        <div class="card balance-card kpi collected-kpi">
+                            <h2>Balance: ₦<%= loanData.remainingBalance.toLocaleString() %></h2>
+                        </div>
+                    </div>
+                    
+                    <h3>40-Day Payment Calendar</h3>
+                    <p class="legend">Green indicates PAID, Red indicates SKIPPED/UNPAID (Due in Past), Gray is Pending (Due in Future).</p>
+                    
+                    <div class="calendar-wrapper">
+                        <table class="calendar">
+                            <thead>
+                                <tr>
+                                    <th>Week</th>
+                                    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% 
+                                // Map slots for quick lookup
+                                var slotsByDate = {};
+                                loanData.paymentCalendar.forEach(function(slot) { 
+                                    slotsByDate[slot.dueDate] = slot; 
+                                });
+                                
+                                // Column config: index 0=Mon (moment.day=1), 1=Tue(2), ..., 5=Sat(6), 6=Sun(0)
+                                var columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                                var dayNums = [1, 2, 3, 4, 5, 6, 0]; // moment.day() values for columns
+                                
+                                // Start from calendar Monday
+                                var calendarStart = moment(loanData.calendarStart);
+                                
+                                for (var week = 1; week <= 6; week++) { // 6 weeks to cover 40+ days
+                                    var weekStartOffset = (week - 1) * 7;
+                                %>
+                                    <tr>
+                                        <td>Week <%= week %></td>
+                                        <% for (var col = 0; col < 7; col++) { // 7 columns
+                                            // Absolute cell date: calendarStart + week offset + col days
+                                            var cellOffset = weekStartOffset + col;
+                                            var cellDate = calendarStart.clone().add(cellOffset, 'days');
+                                            var cellDateStr = cellDate.format('YYYY-MM-DD');
+                                            
+                                            // Check if this cell is within 40-day span and matches a due date
+                                            var isInSpan = cellDateStr >= loanData.firstDue && cellDateStr <= loanData.lastDue;
+                                            var slot = (isInSpan && slotsByDate[cellDateStr]) ? slotsByDate[cellDateStr] : null;
+                                        %>
+                                            <% if (slot) { %>
+                                                <td class="<%= slot.color %>">
+                                                    <div class="date"><%= cellDate.format('MM-DD') %></div>
+                                                    <div class="status"><%= slot.status %></div>
+                                                    <div class="amount">₦<%= slot.expected %></div>
+                                                </td>
+                                            <% } else { %>
+                                                <td class="empty"></td>
+                                            <% } %>
+                                        <% } %>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <p><strong>Progress:</strong> <%= loanData.progress %> | <strong>Daily Payment:</strong> ₦<%= loanData.dailyPayment.toLocaleString() %></p>
+                </section>
+            <% }); %>
+        <% } else { %>
+            <p class="completion-message">Congratulations! All your loans are fully paid. 🎉 No active calendars to display.</p>
+        <% } %>
+
+        <% if (loans && loans.length > 0) { %>
+            <% loans.forEach((loanData) => { %>
+                <section class="card payment-info">
+                    <h3>💳 Payment Instructions for Loan <%= loanData.loan._id %></h3>
+                    <p>Pay daily to your Loan Officer: <strong><%= loanData.loan.loanOfficerId.fullName %></strong></p>
+                    <p><strong>Bank:</strong> <%= loanData.loan.loanOfficerId.bankName || 'Contact Officer' %></p>
+                    <p><strong>Account Name:</strong> <%= loanData.loan.loanOfficerId.accountName || 'Contact Officer' %></p>
+                    <p><strong>Account Number:</strong> <%= loanData.loan.loanOfficerId.accountNumber || 'Contact Officer' %></p>
+                    <p class="note">Transfer ₦<%= loanData.dailyPayment.toLocaleString() %> daily. Reference your name .</p>
+                </section>
+            <% }); %>
+        <% } %>
+
+
+
+    <div class="repayment-progress">
+        <h3>Your Repayment Progress</h3>
+        <canvas id="loanChart"></canvas>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+        const ctx = document.getElementById('loanChart');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+            labels: ['Paid', 'Remaining'],
+            datasets: [{
+                data: [42000, 28000],
+                backgroundColor: ['#1abc9c', '#ecf0f1'],
+                borderWidth: 1
+            }]
+            },
+            options: { plugins: { legend: { position: 'bottom' } } }
+        });
+        </script>
+
+    </main>
+
+
+
+    <footer class="footer">
+  <nav>
+    <a href="/borrower-dashboard" class="nav-link">Dashboard</a>
+    <a href="/logout" class="logout-btn">🔒 Logout</a>
+  </nav>
+</footer>
+
 </body>
 </html>

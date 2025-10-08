@@ -1,43 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bi-Weekly Summary</title>
+    <title>Bi-Weekly Summary - Loan Management System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>Flexible Bi-Weekly Summary - <%= user.username %> (<%= user.role %>)</h1>
-        <a href="/logout">Logout</a> | <a href="/">Back to Dashboard</a>
-        <hr>
-
-        <h2>Generate Custom Period</h2>
-        <form method="get" action="/biweekly-flexible">
-            <input type="date" name="startDate" required> to <input type="date" name="endDate" required>
-            <button type="submit">Generate Summary</button>
-        </form>
-        <p><small>Or view default last periods below.</small></p>
-        <hr>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+            <nav class="header-nav">
+                <a href="<%= user.role === 'LoanOfficer' ? '/officer-dashboard' : '/' %>" class="nav-link"><i class="fas fa-home"></i> Dashboard</a>
+                <span class="logout-wrapper">
+                    <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                </span>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="page-header">
+            <div class="header-text">
+                <h2><i class="fas fa-chart-bar"></i> Flexible Bi-Weekly Summary</h2>
+                <p class="subtitle">Performance Overview for <%= user.username %> (<%= user.role %>)</p>
+            </div>
+            <a href="<%= user.role === 'LoanOfficer' ? '/officer-dashboard' : '/' %>" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+        
+        <section class="card form-card">
+            <h3><i class="fas fa-calendar-alt"></i> Generate Custom Period</h3>
+            <form method="get" action="/biweekly-flexible" class="form-grid">
+                <div class="form-group">
+                    <label for="startDate"><i class="fas fa-calendar-day"></i> Start Date:</label>
+                    <input type="date" id="startDate" name="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDate"><i class="fas fa-calendar-day"></i> End Date:</label>
+                    <input type="date" id="endDate" name="endDate" required>
+                </div>
+                <button type="submit" class="btn-primary"><i class="fas fa-search"></i> Generate Summary</button>
+            </form>
+            <p class="form-note"><small>Or view default last periods below.</small></p>
+        </section>
 
         <% if (periods.length === 0) { %>
-            <p class="message">No active loans found to generate a bi-weekly summary.</p>
+            <section class="card message-card">
+                <div class="message-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p class="message">No active loans found to generate a bi-weekly summary. <a href="/loans"><i class="fas fa-plus"></i> Add Loans</a></p>
+            </section>
         <% } else { %>
-            <div class="summary-grid">
-                <% periods.forEach(period => { %>
-                    <div class="period-card">
-                        <h3>Period: <%= period.start %> to <%= period.end %></h3>
-                        <p><strong>Expected:</strong> ₦<%= period.expected.toLocaleString() %></p>
-                        <p><strong>Collected:</strong> ₦<%= period.collected.toLocaleString() %></p>
-                        <p><strong>Total Interest:</strong> ₦<%= period.totalInterest.toLocaleString() %></p>
-                        <h4>Officer Shares:</h4>
-                        <ul>
-                            <% Object.keys(period.officerShares).forEach(officer => { %>
-                                <li><%= officer %>: ₦<%= Math.ceil(period.officerShares[officer]).toLocaleString() %></li>
-                            <% }); %>
-                        </ul>
-                    </div>
-                <% }); %>
-            </div>
+            <section class="card">
+                <h3><i class="fas fa-list-ul"></i> Summary Periods</h3>
+                <div class="summary-grid">
+                    <% periods.forEach((period, index) => { %>
+                        <div class="period-card">
+                            <div class="period-header">
+                                <h4><i class="fas fa-calendar-week"></i> Period <%= index + 1 %>: <%= period.start %> to <%= period.end %></h4>
+                            </div>
+                            <div class="kpi-row">
+                                <div class="kpi expected-kpi">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span class="kpi-label">Expected</span>
+                                    <p class="kpi-value">₦<%= period.expected.toLocaleString() %></p>
+                                </div>
+                                <div class="kpi collected-kpi">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span class="kpi-label">Collected</span>
+                                    <p class="kpi-value">₦<%= period.collected.toLocaleString() %></p>
+                                </div>
+                            </div>
+                            <div class="interest-kpi">
+                                <i class="fas fa-percentage"></i>
+                                <span class="kpi-label">Total Interest</span>
+                                <p class="kpi-value">₦<%= period.totalInterest.toLocaleString() %></p>
+                            </div>
+                            <div class="shares-section">
+                                <h5><i class="fas fa-users"></i> Officer Shares:</h5>
+                                <ul class="shares-list">
+                                    <% Object.keys(period.officerShares).forEach(officer => { %>
+                                        <li class="share-item">
+                                            <span class="officer-name"><%= officer %>:</span>
+                                            <span class="share-value">₦<%= Math.ceil(period.officerShares[officer]).toLocaleString() %></span>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </section>
         <% } %>
-    </div>
+    </main>
 </body>
 </html>

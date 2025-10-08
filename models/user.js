@@ -7,6 +7,9 @@ const userSchema = new Schema({
     password: { type: String, required: true },
     fullName: { type: String, required: true }, // NEW FIELD
     role: { type: String, enum: ['Admin', 'LoanOfficer', 'Borrower'], required: true },
+    accountNumber: { type: String }, // NEW: For officers' transfer accounts
+    accountName: { type: String }, // NEW: Account holder name
+    bankName: { type: String }, // NEW: Bank name
     loanOfficerId: { type: Schema.Types.ObjectId, ref: 'User', default: null } 
 });
 

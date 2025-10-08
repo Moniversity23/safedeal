@@ -1,56 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>User Management</title>
+    <title>User Management - SAFEDEAL CONTRIBUTION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>User Management (Admin)</h1>
-        <a href="/">Back to Admin Dashboard</a>
-        <hr>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+            <nav class="header-nav">
+                <a href="/" class="nav-link"><i class="fas fa-home"></i>Dashboard</a>
+                <a href="/logout" class="logout-btn">🔒 Logout</a>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="page-header">
+            <h2>👥 User Management (Admin)</h2>
+            <a href="/" class="back-btn">← Back to Admin Dashboard</a>
+        </div>
+        
+        <section class="card form-card">
+            <h3>Add New User</h3>
+            <form action="/users/add" method="post" class="form-grid">
+                <div class="form-group">
+                    <label for="fullName">Full Name:</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role:</label>
+                    <select id="role" name="role" required onchange="toggleAccountNumber()">
+                        <option value="">Select Role</option>
+                        <option value="LoanOfficer">Loan Officer</option>
+                        <option value="Borrower">Borrower</option>
+                    </select>
+                </div>
+                <!-- NEW EXPANDED: Account Details (Hidden until LoanOfficer selected) -->
+                <div class="form-group" id="accountGroup" style="display: none;">
+                    <label for="bankName">Bank Name:</label>
+                    <input type="text" id="bankName" name="bankName" placeholder="e.g., Zenith Bank">
+                    <label for="accountName">Account Name:</label>
+                    <input type="text" id="accountName" name="accountName" placeholder="e.g., Venus Nwaogaraku">
+                    <label for="accountNumber">Account Number:</label>
+                    <input type="text" id="accountNumber" name="accountNumber" placeholder="e.g., 1234567890">
+                </div>
+                <button type="submit" class="btn-primary full-width">Add User ➕</button>
+            </form>
+        </section>
+        
+        <section class="card">
+            <h3>Existing Users</h3>
+            <div class="table-wrapper">
+                <table class="data-table responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Bank Name</th> <!-- NEW -->
+                            <th>Account Name</th> <!-- NEW -->
+                            <th>Account Number</th> <!-- NEW -->
+                            <th>ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% users.forEach(user => { %>
+                            <tr>
+                                <td><%= user.username %></td>
+                                <td><%= user.fullName %></td>
+                                <td><span class="role-badge <%= user.role.toLowerCase() %>"><%= user.role %></span></td>
+                                <td><%= user.bankName || 'N/A' %></td> <!-- NEW -->
+                                <td><%= user.accountName || 'N/A' %></td> <!-- NEW -->
+                                <td><%= user.accountNumber || 'N/A' %></td> <!-- NEW -->
+                                <td><%= user._id %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-        <h2>Add New User</h2>
-        <form action="/users/add" method="post">
-            <label for="fullName">Full Name:</label>
-            <input name="fullName" type="text" placeholder="Full Name (e.g., Jane Doe)" required>
-            
-            <label for="username">Username:</label>
-            <input name="username" placeholder="Username (e.g., JaneDoe)" required>
-            
-            <label for="password">Password:</label>
-            <input name="password" type="password" placeholder="Password" required>
-            
-            <label for="role">Role:</label>
-            <select name="role" required>
-                <option value="" disabled selected>Select Role</option>
-                <option value="LoanOfficer">Loan Officer</option>
-                <option value="Borrower">Borrower</option>
-            </select>
-            <button type="submit">Add User</button>
-        </form>
+    <script>
+        function toggleAccountNumber() {
+            const role = document.getElementById('role').value;
+            const group = document.getElementById('accountGroup');
+            group.style.display = role === 'LoanOfficer' ? 'block' : 'none';
+        }
+    </script>
 
-        <h2 style="margin-top: 3rem;">Existing Users</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Full Name</th>
-                    <th>Role</th>
-                    <th>ID</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% users.forEach(user => { %>
-                    <tr>
-                        <td><%= user.username %></td>
-                        <td><%= user.fullName %></td>
-                        <td><%= user.role %></td>
-                        <td><%= user._id %></td>
-                    </tr>
-                <% }); %>
-            </tbody>
-        </table>
-    </div>
+    <footer class="footer">
+  <nav>
+    <a href="/">Home</a>
+    <a href="/profile">Profile</a>
+    <a href="/logout" class="logout-btn">Logout</a>
+  </nav>
+</footer>
+
 </body>
 </html>

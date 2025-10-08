@@ -8,6 +8,7 @@ const loanSchema = new Schema({
     // The core relationships remain required:
     borrowerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     loanOfficerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    
 
     principal: { type: Number, required: true },
     disbursementDate: { type: Date, required: true },

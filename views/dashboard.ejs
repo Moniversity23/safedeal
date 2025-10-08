@@ -1,31 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - SAFEDEAL CONTRIBUTION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Dashboard: Welcome, <%= user.username %> (<%= user.role %>)</h1>
-        <a href="/logout">Logout</a>
-        <hr>
-
-        <h2>Financial Summary</h2>
-        <!-- In summary section -->
-        <div class="card expected">Expected Today: ₦<%= expectedToday %></div>
-        <div class="card collected">Collected Today: ₦<%= collectedToday %></div>
-        <!-- Existing cards for activeLoans, PAR, totalDisbursed -->
-        <div class="card expected">Total Disbursed: ₦<%= totalDisbursed.toFixed(2) %></div>
-        <div class="card collected">Accumulated Total Collected:₦<%= accumulatedTotalCollected.toLocaleString() %></div>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+            <nav class="header-nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <span class="logout-wrapper">
+                    <a href="/logout" class="logout-btn">🔒 Logout</a>
+                </span>
+            </nav>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="page-header">
+            <h1>Admin Dashboard: Welcome, <%= user.username %> (<%= user.role %>)</h1>
+        </div>
         
-        <h2 style="margin-top: 2rem;">Admin Tools</h2>
-        <nav>
-            <a href="/users/manage">Manage Users (Officers/Borrowers)</a> |
-            <a href="/loans">Manage Loans (Create)</a> |
-            <a href="/daily/<%= today %>">View Today's Payments</a> |
-            <a href="/customers">Customer List & Balances</a> |
-            <a href="/biweekly-flexible">Flexible Bi-Weekly Summary</a>
-        </nav>
-    </div>
+        <section class="financial-section">
+            <h2>📊 Financial Summary</h2>
+            <div class="kpi-grid">
+                <div class="kpi-card expected-kpi">
+                    <h4>Expected Today</h4>
+                    <p class="kpi-value">₦<%= expectedToday.toLocaleString() %></p>
+                </div>
+                <div class="kpi-card collected-kpi">
+                    <h4>Collected Today</h4>
+                    <p class="kpi-value">₦<%= collectedToday.toLocaleString() %></p>
+                </div>
+                <div class="kpi-card disbursed-kpi">
+                    <h4>Total Disbursed</h4>
+                    <p class="kpi-value">₦<%= totalDisbursed.toLocaleString() %></p>
+                </div>
+                <div class="kpi-card accumulated-kpi">
+                    <h4>Accumulated Total Collected</h4>
+                    <p class="kpi-value">₦<%= accumulatedTotalCollected.toLocaleString() %></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="officer-section">
+            <h2>👥 Per-Officer Summary</h2>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Officer</th>
+                            <th>Disbursed</th>
+                            <th>Expected Today</th>
+                            <th>Collected Today</th>
+                            <th>General Collected</th>
+                            <th>Commission Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% officersSummary.forEach(summary => { %>
+                            <tr>
+                                <td><%= summary.officer %></td>
+                                <td>₦<%= summary.disbursed.toLocaleString() %></td>
+                                <td>₦<%= summary.expectedToday.toLocaleString() %></td>
+                                <td>₦<%= summary.collectedToday.toLocaleString() %></td>
+                                <td>₦<%= summary.generalCollected.toLocaleString() %></td>
+                                <td><%= (summary.rate * 100) %>%</td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="tools-section">
+            <h2>🔧 Admin Tools</h2>
+            <nav class="tools-nav">
+                <a href="/users/manage" class="tool-btn">👥 Manage Users</a>
+                <a href="/loans" class="tool-btn">💰 Manage Loans</a>
+                <a href="/daily/<%= today %>" class="tool-btn">📅 View Today's Payments</a>
+                <a href="/customers" class="tool-btn">👤 Customer List</a>
+                <a href="/biweekly-flexible" class="tool-btn">📊 Bi-Weekly Summary</a>
+            </nav>
+        </section>
+
+        <div class="loan-chart-section">
+        <h3>Weekly Repayment Progress</h3>
+        <canvas id="loanChart"></canvas>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+        const ctx = document.getElementById('loanChart');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+            labels: ['Week 1', 'Week 2', 'Week 3'],
+            datasets: [{
+                label: 'Repayments',
+                data: [5500, 6000, 7000],
+                backgroundColor: ['#3498db', '#2ecc71', '#f1c40f']
+            }]
+            },
+            options: {
+            plugins: { legend: { display: true } },
+            scales: { y: { beginAtZero: true } }
+            }
+        });
+        </script>
+
+
+    </main>
 </body>
 </html>

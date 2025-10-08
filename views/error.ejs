@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Error | SAFEDEAL CONTRIBUTION</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      color: #2c3e50;
+      text-align: center;
+      padding: 5rem;
+    }
+    .error-box {
+      display: inline-block;
+      background: #fff;
+      border-radius: 10px;
+      padding: 3rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .error-box h1 {
+      font-size: 3rem;
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-box">
+    <h1><%= status || 500 %></h1>
+    <p><%= message || 'An unexpected error occurred.' %></p>
+    <a href="/" class="btn-primary">Go Home</a>
+  </div>
+</body>
+</html>

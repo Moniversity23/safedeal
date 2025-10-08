@@ -1,85 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Loan Details</title>
+    <title>Loan Details - SAFEDEAL CONTRIBUTION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 </head>
 <body>
-    <h1>Loan Details for <%= loan.borrowerId.fullName %> (<%= loan.borrowerId.username %>)</h1>
-    <a href="/loans">Back to Loans</a> | <a href="/logout">Logout</a>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+            <nav class="header-nav">
+                <a href="/loans" class="nav-link">Back to Loans</a>
+                <span class="logout-wrapper">
+                    <a href="/logout" class="logout-btn">🔒 Logout</a>
+                </span>
+            </nav>
+        </div>
+    </header>
     
-    <% if (loan) { %>
-        <div class="summary">
-            <div class="card">
-                <h2>Loan Amount: ₦<%= loan.principal %></h2>
-            </div>
-            <div class="card">
-                <h2>Repayable (20%): ₦<%= totalRepay %></h2>
-            </div>
-            <div class="card">
-                <h2>Balance: ₦<%= remainingBalance %></h2>
-            </div>
+    <main class="container">
+        <div class="page-header">
+            <h2>Loan Details for <%= loan.borrowerId.fullName %> (<%= loan.borrowerId.username %>)</h2>
         </div>
         
-        <h3>40-Day Payment Calendar</h3>
-        <p>Green indicates PAID, Red indicates SKIPPED/UNPAID (Due in Past), Gray is Pending (Due in Future).</p>
-        
-        <table class="calendar">
-            <thead>
-                <tr>
-                    <th>Week</th>
-                    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% 
-                // Map slots for quick lookup
-                var slotsByDate = {};
-                paymentCalendar.forEach(function(slot) { 
-                    slotsByDate[slot.dueDate] = slot; 
-                });
+        <% if (loan) { %>
+            <section class="summary-section">
+                <h3>💰 Loan Summary</h3>
+                <div class="summary">
+                    <div class="card">
+                        <h4>Loan Amount</h4>
+                        <p class="amount">₦<%= loan.principal.toLocaleString() %></p>
+                    </div>
+                    <div class="card">
+                        <h4>Repayable (20%)</h4>
+                        <p class="amount">₦<%= totalRepay.toLocaleString() %></p>
+                    </div>
+                    <div class="card">
+                        <h4>Balance</h4>
+                        <p class="amount">₦<%= remainingBalance.toLocaleString() %></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="payment-section">
+                <h3>💳 Payment Instructions</h3>
+                <div class="payment-info">
+                    <p><strong>Loan Officer:</strong> <%= loan.loanOfficerId.fullName %></p>
+                    <p><strong>Bank:</strong> <%= loan.loanOfficerId.bankName || 'Contact Officer' %></p>
+                    <p><strong>Account Name:</strong> <%= loan.loanOfficerId.accountName || 'Contact Officer' %></p>
+                    <p><strong>Account Number:</strong> <%= loan.loanOfficerId.accountNumber || 'Contact Officer' %></p>
+                    <p class="note">Transfer ₦<%= dailyPayment.toLocaleString() %> daily. Reference borrower's loan ID.</p>
+                </div>
+            </section>
+
+            <section class="calendar-section">
+                <h3>📅 40-Day Payment Calendar for This Loan</h3>
+                <p class="legend">Green indicates PAID, Red indicates SKIPPED/UNPAID (Due in Past), Gray is Pending (Due in Future).</p>
                 
-                // Column config: index 0=Mon (moment.day=1), 1=Tue(2), ..., 5=Sat(6), 6=Sun(0)
-                var columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                var dayNums = [1, 2, 3, 4, 5, 6, 0]; // moment.day() values for columns
+                <!-- Mark All Paid Button -->
+                <form action="/loan-details/<%= loan._id %>/mark-all-paid" method="post" class="bulk-form" onsubmit="return confirm('Mark all 40 days as paid? This cannot be undone.')">
+                    <button type="submit" class="btn-bulk">💰 Mark All Paid (Full Upfront)</button>
+                </form>
                 
-                // Start from calendar Monday
-                var calendarStart = moment(calendarStart);
-                
-                for (var week = 1; week <= 6; week++) { // 6 weeks to cover 40+ days
-                    var weekStartOffset = (week - 1) * 7;
-                %>
-                    <tr>
-                        <td>Week <%= week %></td>
-                        <% for (var col = 0; col < 7; col++) { // 7 columns
-                            // Absolute cell date: calendarStart + week offset + col days
-                            var cellOffset = weekStartOffset + col;
-                            var cellDate = calendarStart.clone().add(cellOffset, 'days');
-                            var cellDateStr = cellDate.format('YYYY-MM-DD');
+                <div class="calendar-wrapper">
+                    <table class="calendar">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% 
+                            // Map slots for quick lookup
+                            var slotsByDate = {};
+                            paymentCalendar.forEach(function(slot) { 
+                                slotsByDate[slot.dueDate] = slot; 
+                            });
                             
-                            // Check if this cell is within 40-day span and matches a due date
-                            var isInSpan = cellDateStr >= firstDue && cellDateStr <= lastDue;
-                            var slot = (isInSpan && slotsByDate[cellDateStr]) ? slotsByDate[cellDateStr] : null;
-                        %>
-                            <% if (slot) { %>
-                                <td class="<%= slot.color %>">
-                                    <div class="date"><%= cellDate.format('MM-DD') %></div>
-                                    <div class="status"><%= slot.status %></div>
-                                    <div class="amount">₦<%= slot.expected %></div>
-                                </td>
-                            <% } else { %>
-                                <td class="empty"></td>
+                            // Column config: index 0=Mon (moment.day=1), 1=Tue(2), ..., 5=Sat(6), 6=Sun(0)
+                            var columns = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                            var dayNums = [1, 2, 3, 4, 5, 6, 0]; // moment.day() values for columns
+                            
+                            // Start from calendar Monday
+                            var calendarStart = moment(calendarStart);
+                            
+                            for (var week = 1; week <= 6; week++) { // 6 weeks to cover 40+ days
+                                var weekStartOffset = (week - 1) * 7;
+                            %>
+                                <tr>
+                                    <td>Week <%= week %></td>
+                                    <% for (var col = 0; col < 7; col++) { // 7 columns
+                                        // Absolute cell date: calendarStart + week offset + col days
+                                        var cellOffset = weekStartOffset + col;
+                                        var cellDate = calendarStart.clone().add(cellOffset, 'days');
+                                        var cellDateStr = cellDate.format('YYYY-MM-DD');
+                                        
+                                        // Check if this cell is within 40-day span and matches a due date
+                                        var isInSpan = cellDateStr >= firstDue && cellDateStr <= lastDue;
+                                        var slot = (isInSpan && slotsByDate[cellDateStr]) ? slotsByDate[cellDateStr] : null;
+                                    %>
+                                        <% if (slot) { %>
+                                            <td class="<%= slot.color %>">
+                                                <div class="date"><%= cellDate.format('MM-DD') %></div>
+                                                <div class="status"><%= slot.status %></div>
+                                                <div class="amount">₦<%= slot.expected %></div>
+                                            </td>
+                                        <% } else { %>
+                                            <td class="empty"></td>
+                                        <% } %>
+                                    <% } %>
+                                </tr>
                             <% } %>
-                        <% } %>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-        
-        <p><strong>Progress:</strong> <%= progress %> | <strong>Daily Payment:</strong> ₦<%= dailyPayment %></p>
-    <% } else { %>
-        <p>Loan not found.</p>
-    <% } %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p class="progress"><strong>Progress:</strong> <%= progress %> | <strong>Daily Payment:</strong> ₦<%= dailyPayment.toLocaleString() %></p>
+            <% } else { %>
+                <p class="no-loan">Loan not found.</p>
+            <% } %>
+    </main>
 </body>
 </html>

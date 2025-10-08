@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login | Loan Management Pro</title>
+    <title>Login | SAFEDEAL CONTRIBUTION</title>
     <link rel="stylesheet" href="/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" xintegrity="sha512-u3fEw2A9aI2m0P3U2c+t6n9R3z5x8R6v2q4D9I7tB3W5P8lXgW5L4zWk+Q6qK9B3u6d6R+Q6z6R4w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
-        /* Specific centering for the login page */
         .login-center {
             display: flex;
             justify-content: center;
@@ -15,41 +14,80 @@
             background-color: #ecf0f1;
         }
         .login-card {
-            max-width: 450px;
+            max-width: 420px;
             width: 100%;
-            padding: 3rem;
+            padding: 2.5rem;
             background-color: #ffffff;
             border-radius: 15px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
         .login-card h1 {
             border-bottom: 2px solid #1abc9c;
             padding-bottom: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             color: #2c3e50;
             font-size: 1.8rem;
+        }
+        .alert-error {
+            color: #e74c3c;
+            background-color: #f8d7da;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #f5c6cb;
+            text-align: left;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        form label {
+            display: block;
+            text-align: left;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        form input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 0.3rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+        }
+        .btn-primary {
+            margin-top: 1.5rem;
+            width: 100%;
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #16a085;
         }
     </style>
 </head>
 <body class="login-center">
     <div class="login-card">
-        <h1>SAFEDEAL CONTRIBUTION</h1>
-        
+        <h1><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+
         <% if (error) { %>
-            <p style="color: #e74c3c; background-color: #f8d7da; padding: 10px; border-radius: 6px; border: 1px solid #f5c6cb;">
-                <i class="fas fa-exclamation-circle"></i> <%= error %>
-            </p>
+            <div class="alert-error">
+                <i class="fas fa-exclamation-triangle"></i> <%= error %>
+            </div>
         <% } %>
 
         <form action="/login" method="post">
             <label for="username"><i class="fas fa-user"></i> Username:</label>
             <input type="text" id="username" name="username" placeholder="Enter your username" required>
-            
+
             <label for="password"><i class="fas fa-lock"></i> Password:</label>
             <input type="password" id="password" name="password" placeholder="Enter your password" required>
-            
-            <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-sign-in-alt"></i> Log In</button>
+
+            <button type="submit" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Log In</button>
         </form>
     </div>
 </body>
