@@ -24,39 +24,56 @@
         
         <section class="card form-card">
             <h3>Add New User</h3>
+
             <form action="/users/add" method="post" class="form-grid">
+                <!-- Full Name -->
                 <div class="form-group">
-                    <label for="fullName">Full Name:</label>
-                    <input type="text" id="fullName" name="fullName" required>
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" placeholder="e.g., John Doe" required>
                 </div>
+
+                <!-- Username -->
                 <div class="form-group">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" placeholder="e.g., johndoe123" required>
                 </div>
+
+                <!-- Password -->
                 <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" placeholder="Enter password" required>
                 </div>
+
+                <!-- Role Selection -->
                 <div class="form-group">
-                    <label for="role">Role:</label>
-                    <select id="role" name="role" required onchange="toggleAccountNumber()">
-                        <option value="">Select Role</option>
-                        <option value="LoanOfficer">Loan Officer</option>
-                        <option value="Borrower">Borrower</option>
-                    </select>
+                <label for="role">Role:</label>
+                <select id="role" name="role" required onchange="toggleAccountSection()">
+                    <option value="">Select Role</option>
+                    <option value="LoanOfficer">Loan Officer</option>
+                    <option value="Borrower">Borrower</option>
+                </select>
                 </div>
-                <!-- NEW EXPANDED: Account Details (Hidden until LoanOfficer selected) -->
-                <div class="form-group" id="accountGroup" style="display: none;">
-                    <label for="bankName">Bank Name:</label>
-                    <input type="text" id="bankName" name="bankName" placeholder="e.g., Zenith Bank">
-                    <label for="accountName">Account Name:</label>
-                    <input type="text" id="accountName" name="accountName" placeholder="e.g., Venus Nwaogaraku">
-                    <label for="accountNumber">Account Number:</label>
-                    <input type="text" id="accountNumber" name="accountNumber" placeholder="e.g., 1234567890">
+
+                <!-- Account Details Section -->
+                <div class="form-group account-section" id="accountSection">
+                <h4 style="margin-top: 1rem;">Account Details (Optional)</h4>
+
+                <label for="bankName">Bank Name:</label>
+                <input type="text" id="bankName" name="bankName" placeholder="e.g., Zenith Bank">
+
+                <label for="accountName">Account Name:</label>
+                <input type="text" id="accountName" name="accountName" placeholder="e.g., Promise Nwaogaraku">
+
+                <label for="accountNumber">Account Number:</label>
+                <input type="text" id="accountNumber" name="accountNumber" placeholder="e.g., 0123456789">
                 </div>
+
                 <button type="submit" class="btn-primary full-width">Add User ➕</button>
             </form>
-        </section>
+            </section>
+
+            
+
         
         <section class="card">
             <h3>Existing Users</h3>
@@ -92,20 +109,25 @@
     </main>
 
     <script>
-        function toggleAccountNumber() {
-            const role = document.getElementById('role').value;
-            const group = document.getElementById('accountGroup');
-            group.style.display = role === 'LoanOfficer' ? 'block' : 'none';
-        }
-    </script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const role = document.getElementById("role");
+                const section = document.getElementById("accountSection");
 
-    <footer class="footer">
-  <nav>
-    <a href="/">Home</a>
-    <a href="/profile">Profile</a>
-    <a href="/logout" class="logout-btn">Logout</a>
-  </nav>
-</footer>
+                function toggleAccountSection() {
+                if (role.value === "LoanOfficer") {
+                    section.style.display = "block";
+                } else if (role.value === "Borrower") {
+                    section.style.display = "none";
+                } else {
+                    section.style.display = "block"; // Default visible to avoid hiding due to JS issues
+                }
+                }
+
+                window.toggleAccountSection = toggleAccountSection; // make accessible globally
+                toggleAccountSection(); // initialize
+            });
+            </script>
+
 
 </body>
 </html>
