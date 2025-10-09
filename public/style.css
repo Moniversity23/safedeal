@@ -482,3 +482,58 @@ tr:hover {
   .summary { grid-template-columns: 1fr; }
 }
 
+/* Enhanced Calendar Responsiveness */
+.calendar-wrapper {
+    overflow-x: auto;
+    margin: 1rem 0;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    max-width: 100%;
+}
+
+.calendar {
+    min-width: 800px; /* Ensures scroll on small screens */
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.calendar th, .calendar td {
+    padding: 0.75rem 0.5rem; /* Balanced padding */
+    text-align: center;
+    border: 1px solid #dee2e6;
+    white-space: nowrap; /* Prevents text wrap in cells */
+}
+
+.calendar .date { font-size: 0.8rem; font-weight: bold; }
+.calendar .status { font-size: 0.75rem; }
+.calendar .amount { font-size: 0.8rem; }
+
+/* Mobile-Specific (under 768px) */
+@media (max-width: 768px) {
+    .calendar-wrapper {
+        margin: 0.5rem 0;
+        border-radius: 6px;
+    }
+    .calendar {
+        font-size: 0.75rem;
+        min-width: 600px; /* Smaller min-width for phones */
+    }
+    .calendar th, .calendar td {
+        padding: 0.4rem 0.3rem; /* Compact padding */
+    }
+    .calendar .date { font-size: 0.7rem; }
+    .calendar .status { font-size: 0.65rem; }
+    .calendar .amount { font-size: 0.7rem; }
+    .legend { font-size: 0.85rem; text-align: center; margin-bottom: 0.5rem; }
+}
+
+/* Extra Small Screens (under 480px) */
+@media (max-width: 480px) {
+    .calendar {
+        font-size: 0.7rem;
+        min-width: 500px;
+    }
+    .calendar th, .calendar td { padding: 0.3rem 0.2rem; }
+}

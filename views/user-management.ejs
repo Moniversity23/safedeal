@@ -1,132 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+
+<html>
 <head>
-    <title>User Management - SAFEDEAL CONTRIBUTION</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/style.css">
+<title>User Management - SAFEDEAL CONTRIBUTION</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#3498db">
+<link rel="icon" href="/images/safedeallogo.png" type="image/png">
+<!-- Using the original simpler style.css link -->
+<link rel="stylesheet" href="/style.css">
+<!-- Optional: Add Font Awesome for icons if available in your system -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <h1 class="site-title"><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
-            <nav class="header-nav">
-                <a href="/" class="nav-link"><i class="fas fa-home"></i>Dashboard</a>
-                <a href="/logout" class="logout-btn">🔒 Logout</a>
-            </nav>
+<!-- Simple container structure -->
+<div class="container">
+<h1>User Management (Admin)</h1>
+<a href="/">← Back to Admin Dashboard</a>
+<hr>
+
+    <h2>Add New User</h2>
+    <!-- Form is wrapped in a standard structure for simplicity -->
+    <form action="/users/add" method="post" style="display: grid; gap: 15px; grid-template-columns: 1fr 1fr;">
+        
+        <div class="form-group" style="grid-column: 1 / span 2;">
+            <label for="fullName">Full Name:</label>
+            <input type="text" id="fullName" name="fullName" placeholder="e.g., John Doe" required>
         </div>
-    </header>
+
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="e.g., johndoe123" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="Enter password" required>
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role:</label>
+            <select id="role" name="role" required>
+                <option value="">Select Role</option>
+                <option value="LoanOfficer">Loan Officer</option>
+                <option value="Borrower">Borrower</option>
+            </select>
+        </div>
+
     
-    <main class="container">
-        <div class="page-header">
-            <h2>👥 User Management (Admin)</h2>
-            <a href="/" class="back-btn">← Back to Admin Dashboard</a>
-        </div>
-        
-        <section class="card form-card">
-            <h3>Add New User</h3>
-
-            <form action="/users/add" method="post" class="form-grid">
-                <!-- Full Name -->
-                <div class="form-group">
-                <label for="fullName">Full Name:</label>
-                <input type="text" id="fullName" name="fullName" placeholder="e.g., John Doe" required>
+        <!-- Account Details Section (Visible only for Loan Officer) -->
+        <div class="form-group account-section" id="accountGroup" style="display: none; grid-column: 1 / span 2; border: 1px dashed #ccc; padding: 15px;">
+            <h4 style="margin-bottom: 10px; color: #3498db;">Loan Officer Payment Details (Required)</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <div>
+                    <label for="bankName">Bank Name:</label>
+                    <input type="text" id="bankName" name="bankName" placeholder="e.g., Zenith Bank">
                 </div>
-
-                <!-- Username -->
-                <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" placeholder="e.g., johndoe123" required>
+                <div>
+                    <label for="accountName">Account Name:</label>
+                    <input type="text" id="accountName" name="accountName" placeholder="e.g., Venus Nwaogaraku">
                 </div>
-
-                <!-- Password -->
-                <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" placeholder="Enter password" required>
+                <div>
+                    <label for="accountNumber">Account Number:</label>
+                    <input type="text" id="accountNumber" name="accountNumber" placeholder="e.g., 1234567890">
                 </div>
-
-                <!-- Role Selection -->
-                <div class="form-group">
-                <label for="role">Role:</label>
-                <select id="role" name="role" required onchange="toggleAccountSection()">
-                    <option value="">Select Role</option>
-                    <option value="LoanOfficer">Loan Officer</option>
-                    <option value="Borrower">Borrower</option>
-                </select>
-                </div>
-
-                <!-- Account Details Section -->
-                <div class="form-group account-section" id="accountSection">
-                <h4 style="margin-top: 1rem;">Account Details (Optional)</h4>
-
-                <label for="bankName">Bank Name:</label>
-                <input type="text" id="bankName" name="bankName" placeholder="e.g., Zenith Bank">
-
-                <label for="accountName">Account Name:</label>
-                <input type="text" id="accountName" name="accountName" placeholder="e.g., Promise Nwaogaraku">
-
-                <label for="accountNumber">Account Number:</label>
-                <input type="text" id="accountNumber" name="accountNumber" placeholder="e.g., 0123456789">
-                </div>
-
-                <button type="submit" class="btn-primary full-width">Add User ➕</button>
-            </form>
-            </section>
-
-            
-
-        
-        <section class="card">
-            <h3>Existing Users</h3>
-            <div class="table-wrapper">
-                <table class="data-table responsive-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Full Name</th>
-                            <th>Role</th>
-                            <th>Bank Name</th> <!-- NEW -->
-                            <th>Account Name</th> <!-- NEW -->
-                            <th>Account Number</th> <!-- NEW -->
-                            <th>ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% users.forEach(user => { %>
-                            <tr>
-                                <td><%= user.username %></td>
-                                <td><%= user.fullName %></td>
-                                <td><span class="role-badge <%= user.role.toLowerCase() %>"><%= user.role %></span></td>
-                                <td><%= user.bankName || 'N/A' %></td> <!-- NEW -->
-                                <td><%= user.accountName || 'N/A' %></td> <!-- NEW -->
-                                <td><%= user.accountNumber || 'N/A' %></td> <!-- NEW -->
-                                <td><%= user._id %></td>
-                            </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const role = document.getElementById("role");
-                const section = document.getElementById("accountSection");
+        <button type="submit" class="btn-primary" style="grid-column: 1 / span 2; margin-top: 10px;">Add User ➕</button>
+    </form>
 
-                function toggleAccountSection() {
-                if (role.value === "LoanOfficer") {
-                    section.style.display = "block";
-                } else if (role.value === "Borrower") {
-                    section.style.display = "none";
-                } else {
-                    section.style.display = "block"; // Default visible to avoid hiding due to JS issues
-                }
-                }
+    <h2 style="margin-top: 3rem;">Existing Users</h2>
+    <div class="table-wrapper" style="overflow-x: auto;">
+        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Assigned Officer</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.username %></td>
+                        <td><%= user.fullName %></td>
+                        <td><span class="role-badge"><%= user.role %></span></td>
+                        <!-- Display the assigned officer name if available and is a Borrower -->
+                        <td>
+                            <% if (user.role === 'Borrower' && user.assignedOfficerName) { %>
+                                <%= user.assignedOfficerName %>
+                            <% } else { %>
+                                N/A
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-                window.toggleAccountSection = toggleAccountSection; // make accessible globally
-                toggleAccountSection(); // initialize
-            });
-            </script>
+<script src="/js/user-manage.js"></script>
 
 
 </body>

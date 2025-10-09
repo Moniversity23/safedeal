@@ -590,7 +590,7 @@ app.post('/users/add', isAuthenticated, isAdmin, async (req, res) => {
 });
 
 app.get('/users/manage', isAuthenticated, isAdmin, async (req, res) => {
-    const users = await User.find().select('-password'); 
+    const users = await User.find().select('-password'); // Excludes password, includes all else
     res.render('user-management', { users, user: req.session });
 });
 
@@ -844,6 +844,10 @@ app.get('/biweekly-flexible', isAuthenticated, async (req, res) => {
 
     res.render('biweekly-flexible', { periods: summaries, user: req.session, moment });
 });
+app.get('/offline.ejs', (req, res) => {
+  res.render('offline');
+});
+
 
 app.listen(port, () => {
     console.log(`App running on http://localhost:${port}`);

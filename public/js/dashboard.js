@@ -1,5 +1,5 @@
 
-document.addEventListener("DOMContentLoaded", function() {
+/*document.addEventListener("DOMContentLoaded", function() {
   const ctx = document.getElementById('loanChart');
   if (ctx) {
     new Chart(ctx, {
@@ -20,4 +20,4 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 });
-
+*/
