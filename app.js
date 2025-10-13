@@ -22,18 +22,28 @@ const port = process.env.PORT || 3000;
 
 // MongoDB connection
 // 2. FIX: Read MONGO_URI to match your .env file.
-const mongoURI = process.env.MONGO_URI; 
+const mongoURI = process.env.MONGO_URI;
 
-// Check if mongoURI is defined before connecting (good practice)
-if (!mongoURI) {
-    console.warn('⚠️ Warning: MONGO_URI not found. Using fallback connection or skipping DB.');
+if (mongoURI) {
+  mongoose.connect(mongoURI)
+    .then(() => console.log('✅ Connected to MongoDB Atlas (SAFEDEAL)!'))
+    .catch(err => console.error('❌ MongoDB connection failed:', err));
+} else {
+  console.warn('⚠️ Warning: MONGO_URI not found. Skipping MongoDB connection.');
 }
 
+// Session setup
+let sessionStore;
 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Connected to MongoDB Atlas (SAFEDEAL)!'))
-  .catch(err => console.error('❌ MongoDB connection failed:', err));
-
+if (mongoURI) {
+  // Use MongoDB-backed session store if DB is available
+  sessionStore = MongoStore.create({ mongoUrl: mongoURI });
+} else {
+  // Fallback to in-memory session store
+  const sessionMemoryStore = new session.MemoryStore();
+  sessionStore = sessionMemoryStore;
+  console.warn('⚠️ Using in-memory session store (sessions will reset on restart).');
+}
 // Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET, // moved to .env
