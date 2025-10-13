@@ -1,7 +1,11 @@
+// 1. FIX: Load environment variables first.
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const moment = require('moment');
-const dotenv = require('dotenv').config();
+// const dotenv = require('dotenv').config(); // Redundant now that it's at the top
+
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
@@ -17,19 +21,32 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // MongoDB connection
-const mongoURI = process.env.MONGODB_URI;
+// 2. FIX: Read MONGO_URI to match your .env file.
+const mongoURI = process.env.MONGO_URI; 
+
+// Check if mongoURI is defined before connecting (good practice)
+if (!mongoURI) {
+    console.error('❌ Critical Error: MONGO_URI is not defined. Check your .env file.');
+    process.exit(1);
+}
 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Connected to MongoDB Atlas (SAFEDEAL)!'))
-  .catch(err => console.error('❌ MongoDB connection failed:', err));
+  .then(() => console.log('✅ Connected to MongoDB Atlas (SAFEDEAL)!'))
+  .catch(err => console.error('❌ MongoDB connection failed:', err));
 
 // Session setup
 app.use(session({
-  secret: process.env.SESSION_SECRET, // moved to .env
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: mongoURI }),
-  cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 hours
+  secret: process.env.SESSION_SECRET, // moved to .env
+  resave: false,
+  saveUninitialized: false,
+  // This now correctly receives the URI via the defined mongoURI variable
+  store: MongoStore.create({ mongoUrl: mongoURI }), 
+   cookie: {
+    httpOnly: true,
+    secure: false, // set true only if using https
+    sameSite: 'lax', // important for mobile
+    maxAge: 1000 * 60 * 60 * 24 * 7 // session lasts 7 days
+  }
 }));
 
 app.set('view engine', 'ejs');
@@ -43,8 +60,8 @@ app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(compression());
 
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).render('error', { message: 'Something went wrong!' });
+    console.error(err.stack);
+    res.status(500).render('error', { message: 'Something went wrong!' });
 });
 
 // --- MIDDLEWARE FOR AUTHENTICATION AND ROLE CHECKING ---
@@ -60,7 +77,7 @@ const isAdmin = (req, res, next) => {
     if (req.session.userId && req.session.role === 'Admin') {
         return next();
     }
-    res.status(403).send('Access Denied: Admin required.');
+    return res.redirect('/login');
 };
 
 const isLoanOfficer = (req, res, next) => {
@@ -68,14 +85,14 @@ const isLoanOfficer = (req, res, next) => {
         return next();
     }
     // Loan Officer dashboard link should point to /officer-dashboard, NOT /
-    res.status(403).send('Access Denied: Loan Officer required.');
+    return res.redirect('/login');
 };
 
 const isBorrower = (req, res, next) => {
     if (req.session.userId && req.session.role === 'Borrower') {
         return next();
     }
-    res.status(403).send('Access Denied: Borrower required.');
+    return res.redirect('/login');
 };
 
 // --- HELPER FUNCTIONS ---
@@ -743,30 +760,36 @@ app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
 
 
 // Mark All Paid for a Loan (admin/officer only)
-app.post('/loan-details/:id/mark-all-paid', isAuthenticated, async (req, res) => {
+// Mark multiple days as paid (1–40)
+app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, res) => {
     if (req.session.role !== 'Admin' && req.session.role !== 'LoanOfficer') {
         return res.status(403).send('Access Denied: Admin or Loan Officer required.');
     }
-    
+
     const loanId = req.params.id;
+    const daysCount = parseInt(req.body.daysCount, 10);
+
+    if (isNaN(daysCount) || daysCount < 1 || daysCount > 40) {
+        return res.status(400).send('Invalid days count. Please enter a number between 1 and 40.');
+    }
+
     const loan = await Loan.findById(loanId);
     if (!loan) return res.status(404).send('Loan not found.');
-    
+
     const startDate = moment(loan.disbursementDate).add(1, 'days');
     const dailyPayment = calculateDailyPayment(loan.principal);
     const now = new Date();
-    
-    // Update all 40 payments
-    for (let i = 0; i < 40; i++) {
+
+    for (let i = 0; i < daysCount; i++) {
         const dueDate = startDate.clone().add(i, 'days').format('YYYY-MM-DD');
         await Payment.findOneAndUpdate(
             { loanId: loan._id, date: dueDate },
             { paid: dailyPayment, skipped: false, timestamp: now, officerId: req.session.userId },
-            { upsert: true } // Create if missing
+            { upsert: true }
         );
     }
-    
-    res.redirect(`/loan-details/${loanId}`); // Refresh to show updated calendar
+
+    res.redirect(`/loan-details/${loanId}`);
 });
 
 
