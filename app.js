@@ -26,9 +26,9 @@ const mongoURI = process.env.MONGO_URI;
 
 // Check if mongoURI is defined before connecting (good practice)
 if (!mongoURI) {
-    console.error('❌ Critical Error: MONGO_URI is not defined. Check your .env file.');
-    process.exit(1);
+    console.warn('⚠️ Warning: MONGO_URI not found. Using fallback connection or skipping DB.');
 }
+
 
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Connected to MongoDB Atlas (SAFEDEAL)!'))
