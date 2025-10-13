@@ -22,7 +22,8 @@ const port = process.env.PORT || 3000;
 
 // MongoDB connection
 // 2. FIX: Read MONGO_URI to match your .env file.
-const mongoURI = process.env.MONGO_URI;
+const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI;
+
 
 if (mongoURI) {
   mongoose.connect(mongoURI)
