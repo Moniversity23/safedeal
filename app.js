@@ -808,76 +808,85 @@ app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, re
 // Flexible Bi-Weekly Summary (admin/officer)
 // Flexible Bi-Weekly Summary (admin/officer)
 app.get('/biweekly-flexible', isAuthenticated, async (req, res) => {
-    if (req.session.role !== 'Admin' && req.session.role !== 'LoanOfficer') {
-        return res.status(403).send('Access Denied: Admin or Loan Officer required.');
+  if (req.session.role !== 'Admin' && req.session.role !== 'LoanOfficer') {
+    return res.status(403).send('Access Denied: Admin or Loan Officer required.');
+  }
+
+  const { startDate, endDate } = req.query;
+  let periods = [];
+
+  // Default periods
+  if (!startDate || !endDate) {
+    const startRef = moment('2025-09-14');
+    const now = moment();
+    const numPeriods = Math.ceil(now.diff(startRef, 'days') / 14) + 3;
+
+    for (let i = 0; i < numPeriods; i++) {
+      const periodStart = startRef.clone().add(i * 14, 'days');
+      const periodEnd = periodStart.clone().add(13, 'days');
+      periods.push({ start: periodStart.format('YYYY-MM-DD'), end: periodEnd.format('YYYY-MM-DD') });
     }
-    
-    const { startDate, endDate } = req.query;
-    let periods = [];
+  } else {
+    periods = [{ start: moment(startDate).format('YYYY-MM-DD'), end: moment(endDate).format('YYYY-MM-DD') }];
+  }
 
-    if (!startDate || !endDate) {
-        // Default: Last 4 periods from a ref start (2025-09-14)
-        const startRef = moment('2025-09-14');
-        const now = moment();
-        const numPeriods = Math.ceil(now.diff(startRef, 'days') / 14) + 3; // ~4 periods
+  // ✅ Preload all users (for officer rate lookup)
+  const allUsers = await User.find({}, 'username _id').lean();
+  const officerRates = {};
+  for (const user of allUsers) {
+    officerRates[user._id.toString()] = user.username === 'faith' ? 0.25 : 0.17;
+  }
 
-        for (let i = 0; i < numPeriods; i++) {
-            const periodStart = startRef.clone().add(i * 14, 'days');
-            const periodEnd = periodStart.clone().add(13, 'days');
-            periods.push({ start: periodStart.format('YYYY-MM-DD'), end: periodEnd.format('YYYY-MM-DD') });
-        }
-    } else {
-        // Single custom period
-        periods = [{ start: moment(startDate).format('YYYY-MM-DD'), end: moment(endDate).format('YYYY-MM-DD') }];
-    }
+  const summaries = [];
 
-    // Compute summaries (filter for officer if LoanOfficer)
-    const summaries = [];
-    for (const period of periods) {
-        let paymentsQuery = { date: { $gte: period.start, $lte: period.end } };
-        if (req.session.role === 'LoanOfficer') {
-            paymentsQuery.officerId = req.session.userId; // NEW: Filter to own
-        }
-        
-        const payments = await Payment.find(paymentsQuery).populate('loanId');
-        
-        let expected = 0, collected = 0, totalInterest = 0;
-        const officerShares = {};
-
-        for (const payment of payments) {  // for...of for await support
-            const loan = payment.loanId;
-            if (!loan) continue;
-
-            const officer = await User.findById(loan.loanOfficerId);
-            const rate = officer ? (officer.username === 'faith' ? 0.25 : 0.17) : 0.25;
-            const dailyInterest = calculateDailyInterestPortion(loan.principal);
-            const officerShare = calculateOfficerDailyShare(loan.principal, rate);
-            
-            if (!officerShares[loan.officer]) officerShares[loan.officer] = 0;
-
-            expected += payment.expected;
-            const paidAmount = payment.paid !== null ? payment.paid : (payment.skipped ? 0 : 0);
-            collected += paidAmount;
-
-            if (payment.expected > 0) {
-                const paidRatio = paidAmount / payment.expected;
-                totalInterest += dailyInterest * paidRatio;
-                officerShares[loan.officer] += officerShare * paidRatio;
-            }
-        }
-
-        summaries.push({
-            start: period.start,
-            end: period.end,
-            expected: Math.ceil(expected),
-            collected: Math.ceil(collected),
-            totalInterest: Math.ceil(totalInterest),
-            officerShares
-        });
+  for (const period of periods) {
+    const paymentsQuery = { date: { $gte: period.start, $lte: period.end } };
+    if (req.session.role === 'LoanOfficer') {
+      paymentsQuery.officerId = req.session.userId;
     }
 
-    res.render('biweekly-flexible', { periods: summaries, user: req.session, moment });
+    // ✅ Use lean query (faster, no Mongoose document overhead)
+    const payments = await Payment.find(paymentsQuery)
+      .populate({ path: 'loanId', select: 'principal loanOfficerId officer' })
+      .lean();
+
+    let expected = 0, collected = 0, totalInterest = 0;
+    const officerShares = {};
+
+    for (const payment of payments) {
+      const loan = payment.loanId;
+      if (!loan) continue;
+
+      const rate = officerRates[loan.loanOfficerId?.toString()] || 0.17;
+      const dailyInterest = calculateDailyInterestPortion(loan.principal);
+      const officerShare = calculateOfficerDailyShare(loan.principal, rate);
+
+      if (!officerShares[loan.officer]) officerShares[loan.officer] = 0;
+
+      expected += payment.expected || 0;
+      const paidAmount = payment.paid ?? 0;
+      collected += paidAmount;
+
+      if (payment.expected > 0) {
+        const paidRatio = paidAmount / payment.expected;
+        totalInterest += dailyInterest * paidRatio;
+        officerShares[loan.officer] += officerShare * paidRatio;
+      }
+    }
+
+    summaries.push({
+      start: period.start,
+      end: period.end,
+      expected: Math.ceil(expected),
+      collected: Math.ceil(collected),
+      totalInterest: Math.ceil(totalInterest),
+      officerShares,
+    });
+  }
+
+  res.render('biweekly-flexible', { periods: summaries, user: req.session, moment });
 });
+
 app.get('/offline.ejs', (req, res) => {
   res.render('offline');
 });
