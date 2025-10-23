@@ -1,107 +1,181 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login | SAFEDEAL CONTRIBUTION</title>
-    <link rel="stylesheet" href="/style.css">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#3498db">
-    <link rel="icon" href="/images/safedeallogo.png" type="image/png">
+  <meta charset="UTF-8">
+  <title>Login | SAFEDEAL CONTRIBUTION</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#3498db">
+  <link rel="icon" href="/images/safedeallogo.png" type="image/png">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <style>
-        .login-center {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            background-color: #ecf0f1;
-        }
-        .login-card {
-            max-width: 420px;
-            width: 100%;
-            padding: 2.5rem;
-            background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .login-card h1 {
-            border-bottom: 2px solid #1abc9c;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-            color: #2c3e50;
-            font-size: 1.8rem;
-        }
-        .alert-error {
-            color: #e74c3c;
-            background-color: #f8d7da;
-            padding: 12px 15px;
-            border-radius: 6px;
-            border: 1px solid #f5c6cb;
-            text-align: left;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
-        form label {
-            display: block;
-            text-align: left;
-            margin-top: 1rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        form input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 0.3rem;
-            border: 1px solid #bdc3c7;
-            border-radius: 6px;
-        }
-        .btn-primary {
-            margin-top: 1.5rem;
-            width: 100%;
-            background-color: #1abc9c;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #16a085;
-        }
-    </style>
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #3498db 0%, #1abc9c 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-card {
+      width: 90%;
+      max-width: 400px;
+      background-color: #ffffff;
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .login-card h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1.5rem;
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .login-card h1 img {
+      width: 70px;
+      height: 70px;
+      margin-bottom: 0.5rem;
+    }
+
+    .alert-error {
+      color: #e74c3c;
+      background-color: #f8d7da;
+      padding: 12px 15px;
+      border-radius: 6px;
+      border: 1px solid #f5c6cb;
+      text-align: left;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    form label {
+      display: block;
+      text-align: left;
+      margin-top: 1rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    form input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 0.3rem;
+      border: 1px solid #bdc3c7;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      margin-top: 1.5rem;
+      width: 100%;
+      background-color: #1abc9c;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #16a085;
+    }
+
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 2rem 1.5rem;
+        border-radius: 12px;
+      }
+    }
+  </style>
 </head>
-<body class="login-center">
-    <div class="login-card">
-        <h1><img src="/images/safedeallogo.png" alt="SAFEDEAL Logo" class="logo">SAFEDEAL CONTRIBUTION</h1>
+<body>
+  <!-- Watermark Background -->
+  <div 
+    class="absolute inset-0 bg-no-repeat bg-center opacity-10" 
+    style="background-image: url('/images/safedeallogo.png'); background-size: 80%; z-index: 0;"
+  ></div>
 
-        <% if (error) { %>
-            <div class="alert-error">
-                <i class="fas fa-exclamation-triangle"></i> <%= error %>
-            </div>
-        <% } %>
+  <!-- White overlay to keep text readable -->
+  <div class="absolute inset-0 bg-white/90" style="z-index: 1;"></div>
 
-        <form action="/login" method="post">
-            <label for="username"><i class="fas fa-user"></i> Username:</label>
-            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+  <!-- Login Card -->
+  <div class="login-card">
+    <h1>
+      <img src="/images/safedeallogo.png" alt="SAFEDEAL Logo">
+      SAFEDEAL CONTRIBUTION
+    </h1>
 
-            <label for="password"><i class="fas fa-lock"></i> Password:</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    <% if (error) { %>
+      <div class="alert-error">
+        <i class="fas fa-exclamation-triangle"></i> <%= error %>
+      </div>
+    <% } %>
 
-            <button type="submit" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Log In</button>
-        </form>
-    </div>
-    <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register("/service-worker.js")
-      .then(() => console.log("✅ SAFEDEAL Advanced PWA active"))
-      .catch((err) => console.log("Service Worker Error:", err));
-  }
-</script>
+    <form action="/login" method="post">
+      <label for="username"><i class="fas fa-user"></i> Username:</label>
+      <input type="text" id="username" name="username" placeholder="Enter your username" required>
 
+      <label for="password"><i class="fas fa-lock"></i> Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-sign-in-alt"></i> Log In
+      </button>
+    </form>
+  </div>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then(() => console.log("✅ SAFEDEAL Advanced PWA active"))
+        .catch(err => console.log("Service Worker Error:", err));
+    }
+  </script>
+
+  <style>
+    /* Ensure background covers the screen */
+    body {
+      position: relative;
+      height: 100vh;
+      width: 100vw;
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    /* Adjust watermark for small screens */
+    @media (max-width: 768px) {
+      div[style*="background-image"] {
+        background-size: 120%;
+        opacity: 0.06;
+      }
+    }
+    @media (max-width: 480px) {
+      div[style*="background-image"] {
+        background-size: 150%;
+        opacity: 0.05;
+      }
+    }
+  </style>
 </body>
 </html>

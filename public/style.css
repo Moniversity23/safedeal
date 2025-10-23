@@ -537,3 +537,89 @@ tr:hover {
     }
     .calendar th, .calendar td { padding: 0.3rem 0.2rem; }
 }
+
+/* Full-screen login layout */
+body.login-page {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+body.login-page .container {
+  width: 90%;
+  max-width: 400px;
+  margin: 0;
+  padding: 2rem;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+        .login-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-color: #ecf0f1;
+        }
+        .login-card {
+            max-width: 420px;
+            width: 100%;
+            padding: 2.5rem;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .login-card h1 {
+            border-bottom: 2px solid #1abc9c;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.8rem;
+        }
+        .alert-error {
+            color: #e74c3c;
+            background-color: #f8d7da;
+            padding: 12px 15px;
+            border-radius: 6px;
+            border: 1px solid #f5c6cb;
+            text-align: left;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        form label {
+            display: block;
+            text-align: left;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        form input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 0.3rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 6px;
+        }
+        .btn-primary {
+            margin-top: 1.5rem;
+            width: 100%;
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #16a085;
+        }

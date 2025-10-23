@@ -196,17 +196,18 @@ app.post('/login', async (req, res) => {
     req.session.username = user.username;
     req.session.fullName = user.fullName;
 
-    // ✅ Role-based redirects
-    if (user.role === 'Admin') {
-      return res.redirect('/');
-    } else if (user.role === 'LoanOfficer') {
-      return res.redirect('/officer-dashboard');
-    } else if (user.role === 'Borrower') {
-      return res.redirect('/borrower-dashboard');
-    } else {
-      // ✅ Catch unknown roles safely
-      return res.render('login', { error: 'Unknown user role. Please contact support.' });
-    }
+    // ✅ Ensure session is fully saved before redirecting (fixes double-click issue)
+    req.session.save(() => {
+      if (user.role === 'Admin') {
+        res.redirect('/');
+      } else if (user.role === 'LoanOfficer') {
+        res.redirect('/officer-dashboard');
+      } else if (user.role === 'Borrower') {
+        res.redirect('/borrower-dashboard');
+      } else {
+        res.render('login', { error: 'Unknown user role. Please contact support.' });
+      }
+    });
 
   } catch (err) {
     console.error('Login Error:', err);
@@ -214,14 +215,15 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
 app.get('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) return res.redirect('/');
-        res.clearCookie('connect.sid');
-        res.redirect('/login');
-    });
+  req.session.destroy(err => {
+    if (err) return res.redirect('/');
+    res.clearCookie('connect.sid');
+    // ✅ Use res.redirect to login AFTER clearing cookie cleanly
+    res.redirect('/login');
+  });
 });
+
 
 // --- ROLE-BASED DASHBOARD ROUTES ---
 
@@ -489,72 +491,84 @@ app.get('/officer-dashboard', isAuthenticated, isLoanOfficer, async (req, res) =
 
 // Daily view/edit (officer/admin only)
 app.get('/daily/:date', isAuthenticated, async (req, res) => {
-    // Allow admin or loan officer
-    const userRole = req.session.role; // Extract user role here
-    if (userRole !== 'Admin' && userRole !== 'LoanOfficer') {
-        return res.status(403).send('Access Denied: Admin or Loan Officer required.');
-    }
-    
-    const date = req.params.date;
-    let loans;
-    if (userRole === 'LoanOfficer') {
-        // Officer sees only assigned loans
-        loans = await Loan.find({ loanOfficerId: req.session.userId }).populate('borrowerId');
-    } else {
-        // Admin sees all
-        loans = await Loan.find().populate('borrowerId');
-    }
-    
-    const dailyData = [];
-    let totalExpected = 0;
-    let totalCollected = 0;
-    const defaulters = []; 
-    
-    for (const loan of loans) {
-        let payment = await Payment.findOne({ loanId: loan._id, date });
-        const isWithinLoanPeriod = moment(date).isBetween(
-            moment(loan.disbursementDate).add(1, 'days'),
-            moment(loan.disbursementDate).add(40, 'days'),
-            null, '[]'
-        );
-        if (!payment && isWithinLoanPeriod) {
-            payment = new Payment({
-                loanId: loan._id,
-                date,
-                expected: calculateDailyPayment(loan.principal),
-                paid: 0, // Default unpaid until marked
-                skipped: false,
-                officerId: loan.loanOfficerId, // Ensure officerId is set upon creation
-            });
-            await payment.save();
-        } else if (payment && payment.paid === 0 && !payment.skipped) {
-            // No change needed here
+    try {
+        const { role: userRole, userId } = req.session;
+        const { date } = req.params;
+
+        // Authorization check
+        if (!['Admin', 'LoanOfficer'].includes(userRole)) {
+            return res.status(403).send('Access Denied: Admin or Loan Officer required.');
         }
 
-        if (payment) {
-            totalExpected += payment.expected;
-            totalCollected += payment.paid || 0; // total collected for THIS due date
-            if (payment.paid < payment.expected && !payment.skipped) {
-                defaulters.push({
-                    borrower: loan.borrowerId.fullName || loan.borrowerId.username,
-                    expected: payment.expected,
-                    collected: payment.paid || 0
+        // Fetch loans based on role
+        const loanQuery = userRole === 'LoanOfficer'
+            ? { loanOfficerId: userId }
+            : {};
+
+        const loans = await Loan.find(loanQuery).populate('borrowerId');
+
+        // Initialize data containers
+        const dailyData = [];
+        const defaulters = [];
+        let totalExpected = 0;
+        let totalCollected = 0;
+
+        // Process each loan concurrently
+        await Promise.all(loans.map(async loan => {
+            let payment = await Payment.findOne({ loanId: loan._id, date });
+
+            const withinLoanPeriod = moment(date).isBetween(
+                moment(loan.disbursementDate).add(1, 'days'),
+                moment(loan.disbursementDate).add(40, 'days'),
+                null, '[]'
+            );
+
+            // Auto-create missing payment record within loan period
+            if (!payment && withinLoanPeriod) {
+                payment = new Payment({
+                    loanId: loan._id,
+                    date,
+                    expected: calculateDailyPayment(loan.principal),
+                    paid: 0,
+                    skipped: false,
+                    officerId: loan.loanOfficerId,
                 });
+                await payment.save();
             }
-            dailyData.push({ loan, payment });
-        }
+
+            if (payment) {
+                totalExpected += payment.expected;
+                totalCollected += payment.paid || 0;
+
+                // Track defaulters (unpaid & not skipped)
+                if (payment.paid < payment.expected && !payment.skipped) {
+                    defaulters.push({
+                        borrower: loan.borrowerId.fullName || loan.borrowerId.username,
+                        expected: payment.expected,
+                        collected: payment.paid || 0
+                    });
+                }
+
+                dailyData.push({ loan, payment });
+            }
+        }));
+
+        // Render the daily report
+        res.render('daily', {
+            date,
+            dailyData,
+            totalExpected: Math.ceil(totalExpected),
+            totalCollected: Math.ceil(totalCollected),
+            defaulters,
+            user: req.session,
+            userRole,
+            moment
+        });
+
+    } catch (error) {
+        console.error('Error generating daily report:', error);
+        res.status(500).send('Internal Server Error');
     }
-    
-    res.render('daily', { 
-        date, 
-        dailyData, 
-        totalExpected: Math.ceil(totalExpected), 
-        totalCollected: Math.ceil(totalCollected), 
-        defaulters, 
-        user: req.session,
-        userRole, 
-        moment  
-    });
 });
 
 // Simplified payment update route: Mark Full Payment
@@ -595,6 +609,43 @@ app.post('/daily/mark-paid', isAuthenticated, async (req, res) => {
         res.status(500).send('Failed to update payment: ' + error.message);
     }
 });
+
+// Simplified payment reset route: Mark Unpaid
+app.post('/daily/mark-unpaid', isAuthenticated, async (req, res) => {
+    if (req.session.role !== 'Admin') {
+        return res.status(403).send('Access Denied: Only Admins can reset payments.');
+    }
+
+    const { paymentId, date } = req.body;
+
+    try {
+        // Reset payment details
+        const resetData = {
+            paid: 0,
+            skipped: false,
+            officerId: null,
+            timestamp: null
+        };
+
+        const updatedPayment = await Payment.findByIdAndUpdate(
+            paymentId,
+            resetData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedPayment) {
+            console.error('Payment not found for ID:', paymentId);
+            return res.status(404).send('Payment not found.');
+        }
+
+        console.log('✅ Payment reset successfully:', updatedPayment._id);
+        res.redirect(`/daily/${date}`);
+    } catch (error) {
+        console.error('Reset error:', error);
+        res.status(500).send('Failed to reset payment: ' + error.message);
+    }
+});
+
 
 // --- REMAINING ADMIN/GENERAL ROUTES ---
 
