@@ -709,30 +709,52 @@ app.post('/loans/add', isAuthenticated, isAdmin, async (req, res) => {
     }
 });
 
-app.get('/customers', isAuthenticated, isAdmin, async (req, res) => {
-    const loans = await Loan.find().populate('loanOfficerId', 'accountNumber accountName bankName');
-    const customers = [];
-    
-    for (const loan of loans) {
-        const totalRepay = loan.principal + (loan.principal * 0.2);
-        const paymentsMade = await Payment.find({ loanId: loan._id, paid: { $gt: 0 } });
-        
-        const totalPaid = paymentsMade.reduce((sum, payment) => sum + payment.paid, 0);
-        const remainingBalance = totalRepay - totalPaid;
-        
-        customers.push({
-            borrower: loan.borrower,
-            officer: loan.officer,
-            accountNumber: loan.loanOfficerId.accountNumber,
-            bankName: loan.loanOfficerId.bankName,
-            accountName: loan.loanOfficerId.accountName,
-            principal: Math.ceil(loan.principal),
-            remainingBalance: Math.ceil(remainingBalance)
-        });
-    }
-    
+app.get('/customers', isAuthenticated, async (req, res) => {
+    const userRole = req.session.role;
+    const query = userRole === 'LoanOfficer'
+        ? { loanOfficerId: req.session.userId }
+        : {};
+
+    // ✅ Populate both borrower and loan officer
+    const loans = await Loan.find(query)
+        .populate('borrowerId')
+        .populate('loanOfficerId') // add this
+        .lean();
+
+    const today = moment();
+    const customers = await Promise.all(loans.map(async (loan) => {
+        const payments = await Payment.find({ loanId: loan._id }).lean();
+        const totalPaid = payments.reduce((sum, p) => sum + (p.paid || 0), 0);
+        const totalExpected = payments.reduce((sum, p) => sum + (p.expected || 0), 0);
+        const remainingBalance = loan.principal - totalPaid;
+
+        // Calculate completion percentage
+        const completionRate = totalExpected > 0 ? ((totalPaid / totalExpected) * 100).toFixed(1) : 0;
+
+        // Check if nearing completion (within 5 days)
+        const disbursement = moment(loan.disbursementDate);
+        const dueEnd = disbursement.clone().add(40, 'days');
+        const daysLeft = dueEnd.diff(today, 'days');
+        const nearingCompletion = daysLeft <= 5 && daysLeft >= 0;
+
+        return {
+            borrower: loan.borrowerId?.fullName || loan.borrowerId?.username || 'N/A',
+            officer: loan.loanOfficerId?.fullName || loan.loanOfficerId?.username || 'N/A',
+            bankName: loan.bankName || loan.loanOfficerId?.bankName || 'N/A',
+            accountName: loan.accountName || loan.loanOfficerId?.accountName || 'N/A',
+            accountNumber: loan.accountNumber || loan.loanOfficerId?.accountNumber || 'N/A',
+            principal: loan.principal,
+            remainingBalance,
+            completionRate,
+            judicious: completionRate >= 90,
+            nearingCompletion,
+            daysLeft
+        };
+    }));
+
     res.render('customers', { customers, user: req.session });
 });
+
 
 // Loan Details Page (admin/officer only)
 app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
@@ -821,8 +843,7 @@ app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
 });
 
 
-// Mark All Paid for a Loan (admin/officer only)
-// Mark multiple days as paid (1–40)
+
 app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, res) => {
     if (req.session.role !== 'Admin' && req.session.role !== 'LoanOfficer') {
         return res.status(403).send('Access Denied: Admin or Loan Officer required.');
@@ -854,6 +875,73 @@ app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, re
     res.redirect(`/loan-details/${loanId}`);
 });
 
+
+
+// --- BULK CLEAR ROUTE: RESET ALL PAYMENTS MARKED TODAY ---
+app.post('/daily/clear-today', isAuthenticated, async (req, res) => {
+  try {
+    if (req.session.role !== 'Admin') {
+      return res.status(403).send('Access Denied: Admin only.');
+    }
+
+    const startOfToday = moment().startOf('day').toDate();
+    const endOfToday = moment().endOf('day').toDate();
+
+    const result = await Payment.updateMany(
+      {
+        timestamp: { $gte: startOfToday, $lte: endOfToday },
+        paid: { $gt: 0 }
+      },
+      {
+        $set: {
+          paid: 0,
+          skipped: false,
+          officerId: null,
+          timestamp: null
+        }
+      }
+    );
+
+    console.log(`✅ Cleared ${result.modifiedCount} payments marked today`);
+    res.redirect('/'); // ✅ redirect to dashboard instead of /daily
+  } catch (error) {
+    console.error('❌ Error clearing today’s payments:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+// 🚨 WIPE ALL PAYMENTS: Permanently delete ALL Payment records (admin only)
+// 🚨 RESET ALL PAYMENTS: Reset ALL Payment records to defaults (admin only)
+app.post('/admin/reset-payments', isAuthenticated, isAdmin, async (req, res) => {
+  try {
+    // Optional: Add a confirmation field in req.body to prevent accidental resets
+    // e.g., if (req.body.confirm !== 'RESET_ALL_PAYMENTS') return res.status(400).send('Confirmation required.');
+
+    const result = await Payment.updateMany(
+      {},
+      {
+        $set: {
+          paid: 0,
+          skipped: false,
+          timestamp: null,
+          officerId: null,
+          markedById: null,  // ✅ NEW: Reset the new fields
+          markedByName: ''   // ✅ NEW: Reset the new fields
+        }
+      }
+    );
+
+    console.log(`✅ Reset ${result.modifiedCount} payment records to defaults.`);
+
+    // Optional: Recreate or adjust schedules if needed (e.g., for new loans), but since records exist, no need to insert new ones
+
+    res.redirect('/'); // Redirect to admin dashboard
+  } catch (err) {
+    console.error('❌ Error resetting payments:', err);
+    res.status(500).send('Failed to reset payments: ' + err.message);
+  }
+});
 
 // Flexible Bi-Weekly Summary (admin only)
 // Flexible Bi-Weekly Summary (admin/officer)

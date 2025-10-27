@@ -9,7 +9,9 @@ const paymentSchema = new mongoose.Schema({
 
   // --- CRITICAL FIELDS ---
   officerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  timestamp: { type: Date, default: null }
+  timestamp: { type: Date, default: null },
+  markedById: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // ✅ NEW
+  markedByName : String // ✅ NEW
 });
 
 // ✅ SPEED BOOST: create indexes

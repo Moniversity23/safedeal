@@ -3,36 +3,87 @@
 <head>
     <title>Customer List</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9fafb;
+        }
+        .container {
+            width: 95%;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) { background: #f2f2f2; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.85em;
+        }
+        .badge-green { background: #28a745; }
+        .badge-yellow { background: #ffc107; color: black; }
+        .badge-red { background: #dc3545; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Customer List</h1>
-        <a href="/">Back to Dashboard</a>
+        <a href="/">← Back to Dashboard</a>
 
         <table>
             <thead>
                 <tr>
-                    <th>Customer Name</th>
+                    <th>Customer</th>
                     <th>Loan Officer</th>
-                    <th>Bank</th>
-                    <th>Account Name</th>
-                    <th>Account Number</th>
-                    <th>Principal Amount</th>
-                    <th>Remaining Balance</th>
+                    <th>Principal (₦)</th>
+                    <th>Remaining (₦)</th>
+                    <th>Completion %</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                <% customers.forEach(customer => { %>
+                <% customers.forEach(c => { %>
                     <tr>
-                        <td><%= customer.borrower %></td>
-                        <td><%= customer.officer %></td>
-                        <td><%= customer.bankName || 'N/A' %></td>
-                        <td><%= customer.accountName || 'N/A' %></td>
-                        <td><%= customer.accountNumber || 'N/A' %></td>
-                        <td><%= customer.principal.toFixed(2) %></td>
-                        <td><%= customer.remainingBalance.toFixed(2) %></td>
+                        <td><%= c.borrower %></td>
+                        <td><%= c.officer %></td>
+                        <td><%= c.principal.toFixed(2) %></td>
+                        <td><%= c.remainingBalance.toFixed(2) %></td>
+                        <td>
+                            <% if (c.completionRate >= 90) { %>
+                                <span class="badge badge-green"><%= c.completionRate %>%</span>
+                            <% } else if (c.completionRate >= 60) { %>
+                                <span class="badge badge-yellow"><%= c.completionRate %>%</span>
+                            <% } else { %>
+                                <span class="badge badge-red"><%= c.completionRate %>%</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (c.nearingCompletion) { %>
+                                <span class="badge badge-yellow">Completing soon (<%= c.daysLeft %> days)</span>
+                            <% } else if (c.judicious) { %>
+                                <span class="badge badge-green">Judicious</span>
+                            <% } else { %>
+                                <span class="badge badge-red">Behind</span>
+                            <% } %>
+                        </td>
                     </tr>
-                <% }); %>
+                <% }) %>
             </tbody>
         </table>
     </div>

@@ -87,6 +87,17 @@
                 <a href="/daily/<%= today %>" class="tool-btn">📅 View Today's Payments</a>
                 <a href="/customers" class="tool-btn">👤 Customer List</a>
                 <a href="/biweekly-flexible" class="tool-btn">📊 Bi-Weekly Summary</a>
+                <form action="/daily/clear-today" method="POST" onsubmit="return confirmClear()">
+                <button type="submit" class="tool-btn danger-btn">🧹 Clear Payments Marked Today</button>
+                 </form>
+
+                <form action="/admin/reset-payments" method="POST" style="margin: 20px 0;" onsubmit="return confirm('⚠️ This will RESET ALL payment records (paid=0, skipped=false, etc.). Are you sure?');">
+                <button type="submit" class="btn btn-warning">Reset All Payments</button>
+                </form>
+
+
+           
+
             </nav>
         </section>
 
@@ -126,5 +137,12 @@
 
 
     </main>
+
+    <script>
+function confirmClear() {
+    return confirm("⚠️ Are you sure you want to clear all payments marked today? This action cannot be undone!");
+}
+</script>
+
 </body>
 </html>
