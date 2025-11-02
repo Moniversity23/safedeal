@@ -494,6 +494,8 @@ app.get('/daily/:date', isAuthenticated, async (req, res) => {
     try {
         const { role: userRole, userId } = req.session;
         const { date } = req.params;
+        const sortField = req.query.sort || 'borrower'; // NEW: sort by 'borrower' or 'officer'
+        const sortOrder = req.query.order || 'asc'; // NEW: 'asc' or 'desc'
 
         // Authorization check
         if (!['Admin', 'LoanOfficer'].includes(userRole)) {
@@ -553,6 +555,19 @@ app.get('/daily/:date', isAuthenticated, async (req, res) => {
             }
         }));
 
+        // NEW: Dynamic sort by borrower or officer name
+        dailyData.sort((a, b) => {
+            let valA, valB;
+            if (sortField === 'officer') {
+                valA = (a.loan.officer || '').toLowerCase();
+                valB = (b.loan.officer || '').toLowerCase();
+            } else { // default borrower
+                valA = (a.loan.borrowerId.fullName || a.loan.borrowerId.username || '').toLowerCase();
+                valB = (b.loan.borrowerId.fullName || b.loan.borrowerId.username || '').toLowerCase();
+            }
+            return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        });
+
         // Render the daily report
         res.render('daily', {
             date,
@@ -562,7 +577,9 @@ app.get('/daily/:date', isAuthenticated, async (req, res) => {
             defaulters,
             user: req.session,
             userRole,
-            moment
+            moment,
+            sortField, // NEW: Pass for links
+            sortOrder // NEW: Pass for arrow
         });
 
     } catch (error) {
@@ -756,8 +773,11 @@ app.get('/customers', isAuthenticated, async (req, res) => {
 });
 
 
+// ... (The rest of your app.js file content, including imports and existing routes)
+
 // Loan Details Page (admin/officer only)
 app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
+    // ... (Existing GET route logic remains the same, as it correctly calculates paidSlots)
     if (req.session.role !== 'Admin' && req.session.role !== 'LoanOfficer') {
         return res.status(403).send('Access Denied: Admin or Loan Officer required.');
     }
@@ -781,10 +801,12 @@ app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
     let paidSlots = 0;
     
     for (let i = 0; i < 40; i++) {
-        const dueDate = startDate.clone().add(i, 'days');
+        const dueDate = startDate.clone().add(i, 'days'); // i is 0-indexed day offset
         const dueDateStr = dueDate.format('YYYY-MM-DD');
         
         // Explicit string match: Ensure date stored as string in schema if needed
+        // NOTE: If Payment.date is stored as ISODate, this check should be adjusted. 
+        // Assuming Payment.date is stored as YYYY-MM-DD string or an ISODate that aligns to due date.
         const paymentRecord = allPayments.find(p => moment(p.date).format('YYYY-MM-DD') === dueDateStr);
         
         const slot = {
@@ -838,10 +860,10 @@ app.get('/loan-details/:id', isAuthenticated, async (req, res) => {
         moment, // Pass moment for EJS date formatting
         firstDue: firstDueMoment.format('YYYY-MM-DD'), // For reference
         calendarStart: calendarStartMoment.format('YYYY-MM-DD'), // Monday start
-        lastDue: lastDueMoment.format('YYYY-MM-DD') // End for bounding
+        lastDue: lastDueMoment.format('YYYY-MM-DD'), // End for bounding
+        paidSlots // <-- CRITICAL: Pass paidSlots to EJS for button display/logic
     });
 });
-
 
 
 app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, res) => {
@@ -850,31 +872,51 @@ app.post('/loan-details/:id/mark-multiple-paid', isAuthenticated, async (req, re
     }
 
     const loanId = req.params.id;
-    const daysCount = parseInt(req.body.daysCount, 10);
+    const additionalDays = parseInt(req.body.daysCount, 10); // Renamed for clarity
 
-    if (isNaN(daysCount) || daysCount < 1 || daysCount > 40) {
-        return res.status(400).send('Invalid days count. Please enter a number between 1 and 40.');
+    if (isNaN(additionalDays) || additionalDays < 1) {
+        return res.status(400).send('Invalid days count. Please enter a positive number of additional days.');
     }
 
     const loan = await Loan.findById(loanId);
     if (!loan) return res.status(404).send('Loan not found.');
 
-    const startDate = moment(loan.disbursementDate).add(1, 'days');
     const dailyPayment = calculateDailyPayment(loan.principal);
     const now = new Date();
 
-    for (let i = 0; i < daysCount; i++) {
+    // 1. Find how many days are already marked as paid
+    const paidDaysCount = await Payment.countDocuments({ loanId: loan._id, paid: { $gt: 0 } });
+
+    // 2. Calculate the total number of days that will be paid after this action
+    const totalDaysToMark = paidDaysCount + additionalDays;
+    
+    // 3. Check for 40-day limit overflow
+    if (totalDaysToMark > 40) {
+        const remaining = 40 - paidDaysCount;
+        return res.status(400).send(`You currently have ${paidDaysCount} days marked paid. Marking ${additionalDays} more would exceed the 40-day limit. Only ${remaining} days remaining.`);
+    }
+
+    const startDate = moment(loan.disbursementDate).add(1, 'days');
+
+    // 4. Loop from the index of the first unpaid day up to the requested total
+    // i = paidDaysCount is the index for the first unpaid day (e.g., if 10 paid, start at index 10 for Day 11)
+    for (let i = paidDaysCount; i < totalDaysToMark; i++) {
+        // Calculate the due date corresponding to the (i + 1)th day
         const dueDate = startDate.clone().add(i, 'days').format('YYYY-MM-DD');
+
         await Payment.findOneAndUpdate(
+            // Search by loanId and the specific calculated due date
             { loanId: loan._id, date: dueDate },
+            // Set the new payment data
             { paid: dailyPayment, skipped: false, timestamp: now, officerId: req.session.userId },
-            { upsert: true }
+            { upsert: true } // If a record exists (e.g., previously skipped), update it; otherwise, create a new one.
         );
     }
 
     res.redirect(`/loan-details/${loanId}`);
 });
 
+// ... (The rest of your app.js file content)
 
 
 // --- BULK CLEAR ROUTE: RESET ALL PAYMENTS MARKED TODAY ---
